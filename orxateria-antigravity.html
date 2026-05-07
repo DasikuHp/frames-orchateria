@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orxateria Agustí — Des de 1979</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { background: #000; font-family: 'Playfair Display', Georgia, serif; -webkit-font-smoothing: antialiased; }
+
+        /* ═══ CANVAS SECTION ═══ */
+        #orx-wrap {
+            --salmon: #F2C4A4;
+            --terra:  #C4742A;
+            --body:   rgba(242,196,164,0.70);
+            height: 500vh;
+            position: relative;
+            background: #000;
+        }
+
+        #orx-sticky {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            width: 100%;
+            background: #000000;
+            overflow: hidden;
+        }
+
+        #orx-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: block;
+            opacity: 0;
+            transition: opacity 0.9s ease;
+            z-index: 1;
+        }
+
+        #orx-vignette {
+            position: absolute; inset: 0;
+            pointer-events: none; z-index: 2;
+            background:
+                linear-gradient(to right,  rgba(0,0,0,0.4) 0%, transparent 12%, transparent 88%, rgba(0,0,0,0.4) 100%),
+                linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, transparent 10%, transparent 88%, rgba(0,0,0,0.55) 100%);
+        }
+
+        #orx-overlay {
+            position: absolute; inset: 0;
+            pointer-events: none; z-index: 10;
+        }
+
+        .orx-beat {
+            position: absolute;
+            width: 100%;
+            opacity: 0;
+            display: flex;
+            flex-direction: column;
+            pointer-events: none;
+        }
+        .orx-beat h2 { line-height: 1.0; font-weight: 800; text-transform: uppercase; }
+        .orx-beat p  { line-height: 1.65; font-weight: 400; }
+
+        .orx-beat-a { top: 32%; left: 50%; transform: translateX(-50%) translateY(20px); text-align: center; }
+        .orx-beat-b { top: 36%; left: 7vw; text-align: left; width: auto; max-width: 44vw; }
+        .orx-beat-c { top: 36%; right: 7vw; text-align: right; width: auto; max-width: 44vw; align-items: flex-end; }
+        .orx-beat-d { top: 22%; left: 50%; transform: translateX(-50%) translateY(20px); text-align: center; }
+
+        .t-a1 { font-size: clamp(3rem,8vw,7.5rem); letter-spacing: 0.22em; color: var(--salmon); }
+        .t-a2 { font-size: clamp(0.75rem,1.6vw,1rem); color: var(--body); letter-spacing: 0.2em; text-transform: uppercase; font-style: italic; margin-top: 1rem; }
+        .t-b1 { font-size: clamp(2.5rem,7vw,6.5rem); color: var(--salmon); }
+        .t-b2 { font-size: clamp(0.9rem,1.9vw,1.15rem); color: var(--body); margin-top: 1rem; }
+        .t-c1 { font-size: clamp(2rem,5.5vw,5rem); color: var(--salmon); }
+        .t-c2 { font-size: clamp(0.9rem,1.9vw,1.15rem); color: var(--body); margin-top: 1rem; }
+        .t-d1 { font-size: clamp(4rem,11vw,10rem); color: var(--terra); letter-spacing: 0.03em; }
+        .t-d2 { font-size: clamp(0.68rem,1.3vw,0.88rem); letter-spacing: 0.24em; color: var(--body); text-transform: uppercase; margin-top: 1.4rem; }
+
+        .orx-cta {
+            display: inline-block;
+            margin: 2.2rem auto 0;
+            border: 1px solid var(--terra);
+            color: var(--terra);
+            padding: 0.85rem 3.2rem;
+            background: transparent;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.05rem;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.35s, color 0.35s, transform 0.2s;
+            pointer-events: auto;
+        }
+        .orx-cta:hover { background: var(--terra); color: #000; transform: translateY(-2px); }
+
+        #orx-hint {
+            position: absolute; bottom: 2.5rem; left: 50%;
+            transform: translateX(-50%);
+            color: rgba(242,196,164,0.4);
+            font-size: 0.68rem; letter-spacing: 0.3em; text-transform: uppercase;
+            z-index: 20; font-style: italic;
+            animation: orxBounce 2.8s infinite ease-in-out;
+            pointer-events: none;
+        }
+        @keyframes orxBounce {
+            0%,100% { transform: translateX(-50%) translateY(0); }
+            50%      { transform: translateX(-50%) translateY(9px); }
+        }
+
+        #orx-loader { position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: rgba(196,116,42,0.1); z-index: 30; transition: opacity 0.6s; }
+        #orx-bar { width: 0%; height: 100%; background: #C4742A; transition: width 0.12s ease-out; }
+
+        @media (max-width: 768px) {
+            .orx-beat-b, .orx-beat-c {
+                left: 50% !important; right: auto !important;
+                transform: translateX(-50%) !important;
+                text-align: center !important; width: 88vw; max-width: 88vw; align-items: center;
+            }
+        }
+
+        /* ═══ FOOTER ═══ */
+        #orx-footer {
+            background: #000;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 24px;
+            text-align: center;
+            border-top: 1px solid rgba(196,116,42,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        #orx-footer::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 700px; height: 700px;
+            background: radial-gradient(circle, rgba(196,116,42,0.07) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .f-eyebrow {
+            font-size: 0.68rem; letter-spacing: 0.42em; text-transform: uppercase;
+            color: #C4742A; font-style: italic; margin-bottom: 2rem;
+        }
+        .f-title {
+            font-size: clamp(2.5rem, 7vw, 6rem);
+            font-weight: 800; color: #F2C4A4;
+            text-transform: uppercase; letter-spacing: 0.04em;
+            line-height: 1.0; margin-bottom: 1.5rem;
+        }
+        .f-title span { color: #C4742A; }
+        .f-sub {
+            font-size: clamp(0.88rem, 1.7vw, 1.05rem);
+            color: rgba(242,196,164,0.55); max-width: 520px;
+            line-height: 1.8; margin-bottom: 3.5rem; font-style: italic;
+        }
+        .f-btns { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+        .f-btn-p {
+            display: inline-block; background: #C4742A; color: #000;
+            font-family: 'Playfair Display', serif; font-size: 1rem;
+            font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+            padding: 1rem 4rem; text-decoration: none;
+            transition: background 0.3s, transform 0.2s;
+        }
+        .f-btn-p:hover { background: #F2C4A4; transform: translateY(-2px); }
+        .f-btn-s {
+            display: inline-block; border: 1px solid rgba(242,196,164,0.25);
+            color: rgba(242,196,164,0.5); font-family: 'Playfair Display', serif;
+            font-size: 0.82rem; letter-spacing: 0.18em; text-transform: uppercase;
+            padding: 0.7rem 2.5rem; text-decoration: none;
+            transition: border-color 0.3s, color 0.3s;
+        }
+        .f-btn-s:hover { border-color: #C4742A; color: #C4742A; }
+        .f-info {
+            display: flex; flex-wrap: wrap; justify-content: center;
+            gap: 2.5rem; margin-top: 4rem; padding-top: 3rem;
+            border-top: 1px solid rgba(196,116,42,0.12);
+            width: 100%; max-width: 680px;
+        }
+        .f-info-item { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; }
+        .f-lbl { font-size: 0.58rem; letter-spacing: 0.4em; text-transform: uppercase; color: rgba(242,196,164,0.3); }
+        .f-val { font-size: 0.88rem; color: rgba(242,196,164,0.7); font-style: italic; }
+        .f-copy { position: absolute; bottom: 2rem; font-size: 0.58rem; letter-spacing: 0.2em; color: rgba(242,196,164,0.18); text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+<!-- ═══ CANVAS ═══ -->
+<div id="orx-wrap">
+    <div id="orx-sticky">
+        <div id="orx-loader"><div id="orx-bar"></div></div>
+        <canvas id="orx-canvas"></canvas>
+        <div id="orx-vignette"></div>
+
+        <div id="orx-overlay">
+            <div id="orx-a" class="orx-beat orx-beat-a">
+                <h2 class="t-a1">DES DE 1979</h2>
+                <p class="t-a2">Elaboració artesanal pròpia · Alfara del Patriarca</p>
+            </div>
+            <div id="orx-b" class="orx-beat orx-beat-b">
+                <h2 class="t-b1">CADA DIA.<br>Sense<br>dreceres.</h2>
+                <p class="t-b2">Sense processos industrials.<br>Sense conservants.<br>Fet per mans, com sempre ha sigut.</p>
+            </div>
+            <div id="orx-c" class="orx-beat orx-beat-c">
+                <h2 class="t-c1">El sabor<br>que<br>recordes.</h2>
+                <p class="t-c2">Generacions de clients que tornen<br>perquè reconeixen l'autèntic.<br>No hi ha substitut.</p>
+            </div>
+            <div id="orx-d" class="orx-beat orx-beat-d">
+                <h2 class="t-d1">VÉS-HI.</h2>
+                <p class="t-d2">C/ Sagunt, 50 · Alfara del Patriarca<br>Dg–Dj: 11:00–00:00 &nbsp;·&nbsp; Dv–Ds: 11:00–01:30</p>
+                <a href="#orx-footer" class="orx-cta">Veure la carta completa ↓</a>
+            </div>
+        </div>
+
+        <div id="orx-hint">Scroll para descubrir ↓</div>
+    </div>
+</div>
+
+
+<!-- ═══ FOOTER ═══ -->
+<section id="orx-footer">
+    <p class="f-eyebrow">Orxateria Agustí · Des de 1979</p>
+    <h2 class="f-title">El millor<br><span>granissat</span><br>de Valencia.</h2>
+    <p class="f-sub">
+        Horchata artesanal, granissats, helados, gofres i crêpes.<br>
+        Elaboració pròpia cada dia. Sense dreceres, sense processos industrials.<br>
+        Des de 1979 a Alfara del Patriarca.
+    </p>
+    <div class="f-btns">
+        <a href="/carta" class="f-btn-p">Veure la carta completa</a>
+        <a href="https://maps.google.com/?q=C/+Sagunt+50+Alfara+del+Patriarca" target="_blank" class="f-btn-s">Com arribar-hi →</a>
+    </div>
+    <div class="f-info">
+        <div class="f-info-item"><span class="f-lbl">Adreça</span><span class="f-val">C/ Sagunt, 50 · Alfara del Patriarca</span></div>
+        <div class="f-info-item"><span class="f-lbl">Dg – Dj</span><span class="f-val">11:00 – 00:00</span></div>
+        <div class="f-info-item"><span class="f-lbl">Dv – Ds</span><span class="f-val">11:00 – 01:30</span></div>
+        <div class="f-info-item"><span class="f-lbl">Telèfon</span><span class="f-val">961 39 02 27</span></div>
+    </div>
+    <p class="f-copy">© 2026 Orxateria Agustí · Tots els drets reservats</p>
+</section>
+
+
+<script>
+(() => {
+    const ORX = {
+        framesPath: '/wp-content/uploads/orxateria-frames/',
+        frameCount: 121,
+        /* 1.0 = imagen completa (contain), galleta visible.
+           Sube a 1.15 si quieres un poco más de zoom sin perder galleta. */
+        zoom: 1.0,
+        /* -0.04 = sube imagen ligeramente para centrar mejor la jarra
+            0    = centrado matemático puro */
+        verticalShift: -0.03
+    };
+
+    const section = document.getElementById('orx-wrap');
+    const canvas  = document.getElementById('orx-canvas');
+    const ctx     = canvas.getContext('2d');
+    const loader  = document.getElementById('orx-loader');
+    const bar     = document.getElementById('orx-bar');
+    const hint    = document.getElementById('orx-hint');
+
+    const imgs  = new Array(ORX.frameCount);
+    let loaded  = 0, ready = false;
+    let rawProg = 0, smProg = 0, lastIdx = -1;
+    let dpr = 1, cw = 0, ch = 0;
+
+    const resize = () => {
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        cw  = window.innerWidth  * dpr;
+        ch  = window.innerHeight * dpr;
+        canvas.width  = cw;
+        canvas.height = ch;
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        lastIdx = -1;
+    };
+
+    const draw = (idx) => {
+        const img = imgs[idx];
+        if (!img || !img.complete || img.naturalWidth === 0) return;
+        /* CONTAIN: imagen completa, sin recortes. El fondo es negro
+           igual que los frames → las bandas laterales son invisibles */
+        const scale = Math.min(cw / img.naturalWidth, ch / img.naturalHeight) * ORX.zoom;
+        const drawW = img.naturalWidth  * scale;
+        const drawH = img.naturalHeight * scale;
+        const drawX = (cw - drawW) / 2;
+        const drawY = (ch - drawH) / 2 + ch * ORX.verticalShift;
+        ctx.clearRect(0, 0, cw, ch);
+        ctx.drawImage(img, drawX, drawY, drawW, drawH);
+        lastIdx = idx;
+    };
+
+    const updateProg = () => {
+        const r = section.getBoundingClientRect();
+        rawProg = Math.max(0, Math.min(1, -r.top / (r.height - window.innerHeight)));
+    };
+
+    const opac = (p,s,e) => { const fi=s+(e-s)*.12,fo=e-(e-s)*.12; if(p<s||p>e)return 0; if(p<fi)return(p-s)/(fi-s); if(p>fo)return 1-(p-fo)/(e-fo); return 1; };
+    const yS   = (p,s,e) => { const fi=s+(e-s)*.12,fo=e-(e-s)*.12; if(p<s)return 22; if(p>e)return -22; if(p<fi)return 22*(1-(p-s)/(fi-s)); if(p>fo)return -22*((p-fo)/(e-fo)); return 0; };
+
+    const BEATS = [
+        {id:'orx-a',s:.00,e:.18},{id:'orx-b',s:.24,e:.44},
+        {id:'orx-c',s:.50,e:.70},{id:'orx-d',s:.76,e:.96}
+    ];
+    const bEls = BEATS.map(b=>({...b,el:document.getElementById(b.id)}));
+    const mob  = () => window.innerWidth <= 768;
+
+    const updateBeats = () => {
+        bEls.forEach(({el,id,s,e}) => {
+            if (!el) return;
+            const op = opac(smProg,s,e), y = yS(smProg,s,e);
+            el.style.opacity = op;
+            const ctr = id==='orx-a'||id==='orx-d'||mob();
+            el.style.transform = ctr ? `translateX(-50%) translateY(${y}px)` : `translateY(${y}px)`;
+            el.style.pointerEvents = op > .05 ? 'auto' : 'none';
+        });
+        hint.style.opacity = Math.max(0, 1 - rawProg/.06);
+    };
+
+    const loop = () => {
+        requestAnimationFrame(loop);
+        if (!ready) return;
+        const idx = Math.min(ORX.frameCount-1, Math.floor(rawProg*ORX.frameCount));
+        if (idx !== lastIdx) draw(idx);
+        smProg += (rawProg - smProg) * .10;
+        updateBeats();
+    };
+
+    const preload = () => {
+        const base = window.location.protocol==='file:' ? './' : ORX.framesPath;
+        for (let i=0; i<ORX.frameCount; i++) {
+            const img = new Image();
+            img.src = `${base}frame_${String(i+1).padStart(4,'0')}.webp`;
+            const done = () => {
+                loaded++;
+                bar.style.width = `${(loaded/ORX.frameCount)*100}%`;
+                if (loaded===ORX.frameCount) {
+                    ready = true;
+                    canvas.style.opacity = '1';
+                    draw(0);
+                    setTimeout(()=>loader.style.opacity='0', 700);
+                }
+            };
+            img.onload = img.onerror = done;
+            imgs[i] = img;
+        }
+    };
+
+    window.addEventListener('scroll', updateProg, {passive:true});
+    let rt;
+    window.addEventListener('resize', () => { clearTimeout(rt); rt=setTimeout(()=>{resize();updateProg();},80); }, {passive:true});
+
+    resize(); updateProg(); requestAnimationFrame(loop); preload();
+})();
+</script>
+</body>
+</html>

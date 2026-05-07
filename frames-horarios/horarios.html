@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horaris · Orxateria Agustí</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    :root {
+        --salmon: #F2C4A4;
+        --terra:  #C4742A;
+        --terra-dim: rgba(196,116,42,0.55);
+        --body:   rgba(242,196,164,0.80);
+        --sans: 'DM Sans', sans-serif;
+    }
+
+    body {
+        background: #000;
+        font-family: 'Playfair Display', Georgia, serif;
+        -webkit-font-smoothing: antialiased;
+        color: var(--salmon);
+        overflow-x: hidden;
+    }
+
+    /* ─── NAV ─── */
+    #nav {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 1.4rem 5vw;
+    }
+    .nav-logo { font-size: 0.65rem; letter-spacing: 0.42em; text-transform: uppercase; color: rgba(196,116,42,0.65); font-style: italic; text-decoration: none; }
+    .nav-back  { font-size: 0.6rem; letter-spacing: 0.28em; text-transform: uppercase; color: rgba(242,196,164,0.38); text-decoration: none; transition: color 0.3s; }
+    .nav-back:hover { color: var(--terra); }
+
+    /* ─── LIVE BADGE nav ─── */
+    #live-badge {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        font-family: var(--sans); font-size: 0.62rem; letter-spacing: 0.18em;
+        text-transform: uppercase; font-weight: 500;
+        color: rgba(242,196,164,0.55);
+        border: 1px solid rgba(196,116,42,0.2);
+        padding: 0.35rem 0.9rem; border-radius: 100px;
+        transition: border-color 0.4s, color 0.4s;
+    }
+    #live-badge.open { color: #6dce85; border-color: rgba(109,206,133,0.35); }
+    #live-badge .ld { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    #live-badge.open .ld { animation: pulse-green 2s infinite; }
+    @keyframes pulse-green { 0%,100% { box-shadow: 0 0 0 0 rgba(109,206,133,0.5); } 50% { box-shadow: 0 0 0 5px rgba(109,206,133,0); } }
+
+    /* ─── LOADING ─── */
+    #orx-loading {
+        position: fixed; inset: 0; z-index: 500; background: #000;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.6rem;
+        transition: opacity 0.8s ease, visibility 0.8s;
+    }
+    #orx-loading.done { opacity: 0; visibility: hidden; }
+    .ld-logo { font-size: 0.65rem; letter-spacing: 0.55em; text-transform: uppercase; color: rgba(196,116,42,0.5); font-style: italic; }
+    .ld-track { width: 180px; height: 1px; background: rgba(196,116,42,0.12); }
+    .ld-bar   { height: 100%; width: 0%; background: var(--terra); transition: width 0.08s linear; }
+    .ld-pct   { font-family: var(--sans); font-size: 0.56rem; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(196,116,42,0.35); }
+
+    /* ─── SCROLL ZONE ─── */
+    #scroll-zone { height: 500vh; position: relative; }
+
+    /* ─── STICKY SPLIT ─── */
+    #sticky-view {
+        position: sticky; top: 0;
+        height: 100vh; width: 100%;
+        display: grid; grid-template-columns: 1fr 1fr;
+        overflow: hidden;
+    }
+
+    /* ─── LEFT PANEL ─── */
+    #left-panel {
+        position: relative;
+        display: flex; align-items: center;
+        padding: 0 7vw;
+    }
+    #left-panel::after {
+        content: '';
+        position: absolute; top: 0; right: 0; bottom: 0; width: 100px;
+        background: linear-gradient(to right, transparent, rgba(0,0,0,0.9));
+        pointer-events: none; z-index: 3;
+    }
+
+    .beat {
+        position: absolute; left: 7vw; right: 7vw;
+        opacity: 0; transform: translateY(18px);
+        transition: opacity 0.5s ease, transform 0.5s ease;
+        pointer-events: none;
+    }
+    .beat.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+    /* Beat A — Benvingut */
+    .b-eye  { font-family: var(--sans); font-size: 0.58rem; letter-spacing: 0.48em; text-transform: uppercase; color: var(--terra); margin-bottom: 1.8rem; font-weight: 500; }
+    .b-hero { font-size: clamp(3.4rem,5.5vw,5.4rem); font-weight: 900; text-transform: uppercase; line-height: 0.9; color: var(--salmon); margin-bottom: 1.8rem; }
+    .b-hero em { color: var(--terra); font-style: normal; }
+    .b-rule { width: 38px; height: 1px; background: var(--terra); margin-bottom: 1.6rem; }
+    .b-sub  { font-size: clamp(0.9rem,1.4vw,1.0rem); color: var(--body); line-height: 1.9; font-style: italic; }
+
+    /* Beat B/C — Horaris (info MÉS VISIBLE) */
+    .b-lbl  { font-family: var(--sans); font-size: 0.56rem; letter-spacing: 0.55em; text-transform: uppercase; color: var(--terra); margin-bottom: 0.9rem; font-weight: 500; }
+    .b-days { font-size: clamp(1.6rem,2.8vw,2.6rem); font-weight: 800; text-transform: uppercase; color: var(--salmon); line-height: 1.1; margin-bottom: 1.2rem; }
+    .b-time {
+        font-size: clamp(4.5rem,8.5vw,8.5rem); font-weight: 900; color: var(--terra);
+        line-height: 0.88; letter-spacing: -0.03em; margin-bottom: 1.6rem;
+        text-shadow: 0 0 60px rgba(196,116,42,0.3);
+    }
+    .b-time-row { display: flex; align-items: baseline; gap: 0.3em; }
+    .b-time-sep { font-size: clamp(2rem,4vw,4rem); color: rgba(196,116,42,0.45); }
+    .b-note { font-family: var(--sans); font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(242,196,164,0.35); font-weight: 300; }
+
+    /* Status pill inline */
+    .b-status {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        font-family: var(--sans); font-size: 0.65rem; letter-spacing: 0.14em;
+        text-transform: uppercase; font-weight: 500;
+        padding: 0.5rem 1.1rem; border-radius: 100px; margin-bottom: 1.8rem;
+        border: 1px solid;
+    }
+    .b-status.obert  { color: #6dce85; border-color: rgba(109,206,133,0.3); background: rgba(109,206,133,0.06); }
+    .b-status.tancat { color: rgba(242,196,164,0.4); border-color: rgba(242,196,164,0.1); }
+    .b-status .sd { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .b-status.obert .sd { animation: pulse-green 2s infinite; }
+
+    /* Beat D — Adreça + planificador */
+    .b-addr-title { font-size: clamp(2.6rem,4.5vw,4.4rem); font-weight: 900; text-transform: uppercase; color: var(--salmon); line-height: 1.0; margin-bottom: 1.8rem; }
+    .b-addr-title em { color: var(--terra); font-style: normal; }
+    .b-street { font-size: clamp(1.4rem,2.6vw,2.0rem); color: var(--terra); font-weight: 700; margin-bottom: 0.4rem; }
+    .b-town   { font-family: var(--sans); font-size: 0.75rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--body); margin-bottom: 2rem; font-weight: 300; }
+
+    /* Planificador de visita */
+    .vt-wrap {
+        border: 1px solid rgba(196,116,42,0.18);
+        border-left: 2px solid rgba(196,116,42,0.55);
+        padding: 1.5rem 1.6rem;
+        margin-bottom: 2rem;
+        background: rgba(196,116,42,0.04);
+    }
+    .vt-title { font-family: var(--sans); font-size: 0.62rem; letter-spacing: 0.38em; text-transform: uppercase; color: rgba(196,116,42,0.7); font-weight: 500; margin-bottom: 1rem; }
+    .vt-days  { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .vd {
+        font-family: var(--sans); font-size: 0.62rem; font-weight: 500;
+        letter-spacing: 0.04em; text-transform: uppercase;
+        width: 36px; height: 36px; border-radius: 50%;
+        border: 1px solid rgba(196,116,42,0.2);
+        background: transparent; color: rgba(242,196,164,0.45);
+        cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+    }
+    .vd:hover  { border-color: var(--terra); color: var(--terra); }
+    .vd.sel    { background: var(--terra); border-color: var(--terra); color: #000; }
+    .vd.today  { border-color: rgba(196,116,42,0.5); color: var(--salmon); }
+
+    .vt-time-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+    .vt-time-lbl { font-family: var(--sans); font-size: 0.6rem; letter-spacing: 0.28em; text-transform: uppercase; color: rgba(242,196,164,0.35); white-space: nowrap; }
+    .vt-input {
+        font-family: var(--sans); font-size: 1rem; font-weight: 500;
+        background: transparent; border: none;
+        border-bottom: 1px solid rgba(196,116,42,0.3);
+        color: var(--salmon); padding: 0.3rem 0.4rem;
+        outline: none; cursor: pointer; width: 110px;
+        color-scheme: dark;
+    }
+    .vt-input:focus { border-bottom-color: var(--terra); }
+
+    .vt-result {
+        font-family: var(--sans); font-size: 0.78rem; font-weight: 500;
+        letter-spacing: 0.06em; min-height: 1.4rem;
+        transition: opacity 0.3s;
+    }
+    .vt-result.ok  { color: #6dce85; }
+    .vt-result.nok { color: rgba(242,196,164,0.45); }
+
+    .b-cta {
+        display: inline-block; border: 1px solid var(--terra); color: var(--terra);
+        font-family: var(--sans); font-size: 0.78rem; letter-spacing: 0.14em;
+        text-transform: uppercase; padding: 0.85rem 2.6rem; text-decoration: none; font-weight: 500;
+        transition: background 0.3s, color 0.3s, transform 0.2s;
+    }
+    .b-cta:hover { background: var(--terra); color: #000; transform: translateY(-2px); }
+
+    /* ─── RIGHT PANEL ─── */
+    #right-panel {
+        position: relative; background: #000;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden;
+    }
+    #right-panel::before {
+        content: ''; position: absolute;
+        top: 0; left: 0; bottom: 0; width: 160px;
+        background: linear-gradient(to right, #000 0%, rgba(0,0,0,0.55) 55%, transparent 100%);
+        z-index: 3; pointer-events: none;
+    }
+    #right-panel::after {
+        content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+        background:
+            radial-gradient(ellipse 80% 90% at 50% 50%, transparent 50%, rgba(0,0,0,0.5) 100%),
+            linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, transparent 16%, transparent 76%, rgba(0,0,0,0.65) 100%);
+    }
+    #orx-canvas {
+        max-width: 100%; max-height: 100%; display: block;
+        opacity: 1;
+        filter: none;
+        transform: none;
+    }
+    #rp-ambient { position: absolute; inset: 0; z-index: 1; opacity: 1; transition: opacity 1s ease; }
+    #rp-ambient.hidden { opacity: 0; pointer-events: none; }
+
+    /* ─── CLOCK DIAL (readability + animation) ─── */
+    #clock-dial{
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        z-index: 8; pointer-events: none;
+        opacity: 1;
+        transform: translateY(0);
+        transition: opacity 0.45s ease, transform 0.45s ease;
+    }
+    #clock-dial.hide{
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    #clock-dial .cd-box{
+        width: 132px; height: 132px; border-radius: 50%;
+        border: 1px solid rgba(196,116,42,0.25);
+        background:
+            radial-gradient(circle at 40% 35%, rgba(196,116,42,0.12), transparent 55%),
+            radial-gradient(circle at 50% 60%, rgba(242,196,164,0.08), transparent 58%),
+            rgba(0,0,0,0.35);
+        backdrop-filter: blur(10px) saturate(120%);
+        -webkit-backdrop-filter: blur(10px) saturate(120%);
+        box-shadow: 0 18px 60px rgba(0,0,0,0.55);
+        display: flex; align-items: center; justify-content: center;
+        position: relative;
+        transition: border-color 0.4s ease, box-shadow 0.4s ease;
+    }
+    #clock-dial.open .cd-box{
+        border-color: rgba(109,206,133,0.35);
+        box-shadow: 0 20px 70px rgba(109,206,133,0.12);
+    }
+    #clock-dial.open .cd-box{
+        animation: dial-pulse 2.25s ease-in-out infinite;
+    }
+    #clock-dial.closed .cd-box{
+        border-color: rgba(242,196,164,0.22);
+        box-shadow: 0 20px 70px rgba(242,196,164,0.08);
+    }
+    @keyframes dial-pulse{
+        0%, 100% { box-shadow: 0 20px 70px rgba(109,206,133,0.10); transform: translateY(0); }
+        50% { box-shadow: 0 26px 88px rgba(109,206,133,0.18); transform: translateY(-2px); }
+    }
+    .cd-hand{
+        position: absolute; left: 50%; top: 50%;
+        width: 3px; border-radius: 2px;
+        transform-origin: 50% 100%;
+        transform: translate(-50%,-100%) rotate(var(--angle, 0deg));
+        background: var(--terra);
+        opacity: 0.95;
+        box-shadow: 0 0 22px rgba(196,116,42,0.18);
+    }
+    #clock-dial.closed .cd-hand{ background: rgba(242,196,164,0.52); box-shadow: 0 0 18px rgba(242,196,164,0.12); }
+    .cd-hour{ height: 34%; width: 4px; }
+    .cd-minute{ height: 47%; width: 2px; }
+    .cd-core{
+        position: absolute; left: 50%; top: 50%;
+        width: 12px; height: 12px; border-radius: 50%;
+        transform: translate(-50%,-50%);
+        background: var(--terra);
+        box-shadow: 0 0 0 1px rgba(0,0,0,0.35), 0 0 26px rgba(196,116,42,0.25);
+    }
+    #clock-dial.closed .cd-core{
+        background: rgba(242,196,164,0.65);
+        box-shadow: 0 0 0 1px rgba(0,0,0,0.35), 0 0 22px rgba(242,196,164,0.16);
+    }
+    #clock-label{
+        position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
+        width: 92%; text-align: center;
+        padding: 0.65rem 0.6rem;
+        border-radius: 14px;
+        background: rgba(0,0,0,0.35);
+        border: 1px solid rgba(196,116,42,0.18);
+        backdrop-filter: blur(10px) saturate(120%);
+        -webkit-backdrop-filter: blur(10px) saturate(120%);
+    }
+    #clock-dial.open #clock-label{ border-color: rgba(109,206,133,0.28); }
+    .cd-label-top{
+        font-family: var(--sans);
+        font-size: 0.58rem;
+        letter-spacing: 0.38em;
+        text-transform: uppercase;
+        color: rgba(242,196,164,0.88);
+    }
+    #clock-dial.open .cd-label-top{ color: #6dce85; }
+    #clock-dial.closed .cd-label-top{ color: rgba(242,196,164,0.65); }
+    .cd-label-sub{
+        margin-top: 0.35rem;
+        font-family: var(--sans);
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: rgba(242,196,164,0.9);
+        line-height: 1.2;
+    }
+
+    /* Make frames protagonist: hide UI overlays over the animation */
+    #clock-dial,
+    #ov-b,
+    #ov-c,
+    #ov-status{
+        display: none !important;
+    }
+
+    /* ─── SCROLL PROGRESS BAR (right panel) ─── */
+    #scroll-prog {
+        position: absolute; right: 1.4rem; top: 15%; bottom: 15%;
+        width: 2px; background: rgba(196,116,42,0.1);
+        z-index: 15; border-radius: 2px;
+        opacity: 0.55;
+    }
+    #scroll-prog-fill {
+        position: absolute; top: 0; left: 0; right: 0;
+        background: linear-gradient(to bottom, var(--terra), rgba(196,116,42,0.4));
+        border-radius: 2px; transition: height 0.08s linear;
+    }
+
+    /* ─── CHAPTER DOTS (right panel) ─── */
+    #chapter-dots {
+        position: absolute; right: 2.8rem; top: 50%;
+        transform: translateY(-50%);
+        display: flex; flex-direction: column; gap: 10px;
+        z-index: 15;
+        opacity: 0.65;
+    }
+    .cdot {
+        width: 5px; height: 5px; border-radius: 50%;
+        background: rgba(196,116,42,0.2);
+        transition: background 0.4s, transform 0.4s;
+        cursor: default;
+    }
+    .cdot.on { background: var(--terra); transform: scale(1.6); }
+
+    /* ─── VIDEO OVERLAYS (schedule info sobre el vídeo) ─── */
+    .rp-ov {
+        position: absolute; z-index: 10;
+        bottom: 12%; left: 50%; transform: translateX(-50%);
+        text-align: center;
+        opacity: 0; transition: opacity 0.55s ease, transform 0.55s ease;
+        transform: translateX(-50%) translateY(10px);
+        pointer-events: none;
+        min-width: 260px;
+    }
+    .rp-ov.vis {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .ov-inner {
+        background: rgba(0,0,0,0.72);
+        border: 1px solid rgba(196,116,42,0.35);
+        border-top: 2px solid var(--terra);
+        padding: 1.4rem 2.4rem 1.2rem;
+        backdrop-filter: blur(14px) saturate(140%);
+        -webkit-backdrop-filter: blur(14px) saturate(140%);
+    }
+    .ov-tag  { font-family: var(--sans); font-size: 0.52rem; letter-spacing: 0.42em; text-transform: uppercase; color: var(--terra); font-weight: 500; margin-bottom: 0.55rem; }
+    .ov-days { font-size: 0.88rem; font-weight: 700; text-transform: uppercase; color: var(--salmon); margin-bottom: 0.5rem; letter-spacing: 0.04em; }
+    .ov-time-big { font-size: 2.4rem; font-weight: 900; color: var(--terra); line-height: 1; letter-spacing: -0.02em; }
+    .ov-sep  { font-size: 1.2rem; color: rgba(196,116,42,0.4); margin: 0 0.15em; }
+
+    /* ─── STATUS OVERLAY (cantonada sup-dreta del vídeo) ─── */
+    #ov-status {
+        position: absolute; top: 12%; right: 1.8rem; z-index: 15;
+        opacity: 0; transition: opacity 0.6s ease;
+    }
+    #ov-status.vis { opacity: 1; }
+    .ov-st-inner {
+        font-family: var(--sans); font-size: 0.6rem; letter-spacing: 0.22em;
+        text-transform: uppercase; font-weight: 500;
+        display: flex; align-items: center; gap: 0.4rem;
+        color: rgba(242,196,164,0.55);
+    }
+    .ov-st-inner.ok { color: #6dce85; }
+    .ov-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .ov-st-inner.ok .ov-dot { animation: pulse-green 2s infinite; }
+
+    /* ─── SCROLL HINT ─── */
+    #scroll-hint {
+        position: fixed; bottom: 2.4rem; left: 50%;
+        transform: translateX(-50%);
+        font-family: var(--sans); font-size: 0.58rem; letter-spacing: 0.38em; text-transform: uppercase;
+        color: rgba(242,196,164,0.28); z-index: 100; pointer-events: none;
+        animation: bounce 2.8s infinite ease-in-out;
+        transition: opacity 0.4s;
+    }
+    @keyframes bounce {
+        0%,100% { transform: translateX(-50%) translateY(0); }
+        50%      { transform: translateX(-50%) translateY(7px); }
+    }
+
+    /* ─── DIVISOR ─── */
+    #scroll-divide { height: 1px; background: linear-gradient(to right, transparent, rgba(196,116,42,0.15), transparent); }
+
+    /* ─── REVIEWS ─── */
+    #reviews { position: relative; padding: 80px 6vw 0; overflow: hidden; }
+    #reviews::before {
+        content: ''; position: absolute; inset: 0; pointer-events: none;
+        background:
+            radial-gradient(ellipse 60% 40% at 10% 20%, rgba(196,116,42,0.08) 0%, transparent 60%),
+            radial-gradient(ellipse 50% 35% at 90% 60%, rgba(242,196,164,0.05) 0%, transparent 55%);
+    }
+    #reviews > * { position: relative; z-index: 1; }
+
+    .rev-header { max-width: 1200px; margin: 0 auto 60px; display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 2rem; }
+    .rev-big-title { font-size: clamp(3rem,5.8vw,5.5rem); font-weight: 900; text-transform: uppercase; line-height: 0.93; color: var(--salmon); }
+    .rev-big-title em { color: var(--terra); font-style: normal; }
+    .rev-score-blk { text-align: right; flex-shrink: 0; }
+    .rev-score { font-size: clamp(3.5rem,5vw,4.8rem); font-weight: 900; color: var(--terra); line-height: 1; }
+    .rev-stars { font-size: 1.1rem; color: var(--terra); letter-spacing: 0.1em; margin: 0.3rem 0; }
+    .rev-count { font-family: var(--sans); font-size: 0.6rem; letter-spacing: 0.38em; text-transform: uppercase; color: var(--body); }
+
+    /* Grid cards */
+    .gg { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+
+    .gc {
+        position: relative; border-radius: 2px;
+        padding: 1.9rem 1.9rem 1.5rem 1.7rem;
+        border-left: 2px solid rgba(196,116,42,0.5);
+        border-top: 1px solid rgba(196,116,42,0.07);
+        border-right: 1px solid rgba(196,116,42,0.05);
+        border-bottom: 1px solid rgba(196,116,42,0.05);
+        background: rgba(196,116,42,0.04);
+        cursor: pointer;
+        opacity: 0; transform: translateY(20px);
+        transition: opacity 0.5s ease, transform 0.5s ease, border-left-color 0.25s, background 0.25s;
+    }
+    .gc::before {
+        content: '\201C'; position: absolute; top: 0.2rem; right: 1.1rem;
+        font-size: 5rem; line-height: 1; color: rgba(196,116,42,0.08);
+        font-family: 'Playfair Display', serif; pointer-events: none; user-select: none;
+    }
+    .gc.vis { opacity: 1; transform: translateY(0); }
+    .gc:hover { border-left-color: var(--terra); background: rgba(196,116,42,0.08); transform: translateY(-6px); box-shadow: 0 18px 60px rgba(0,0,0,0.35); }
+    .gc.feat  { grid-column: span 2; }
+
+    .gc-hd { display: flex; align-items: center; gap: 0.85rem; margin-bottom: 1rem; }
+    .gc-av { width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-weight: 800; color: #000; }
+    .gc-nm { font-size: 0.9rem; font-weight: 700; color: var(--salmon); line-height: 1.2; }
+    .gc-meta { display: flex; align-items: center; gap: 0.55rem; margin-top: 0.18rem; }
+    .gc-st { font-size: 0.68rem; color: var(--terra); }
+    .gc-wh { font-family: var(--sans); font-size: 0.55rem; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(242,196,164,0.33); }
+    .gc-text {
+        font-size: 0.94rem; color: rgba(242,196,164,0.92);
+        line-height: 1.88; font-style: normal; font-weight: 400;
+        position: relative; z-index: 1;
+        max-height: 6.6em; overflow: hidden;
+        transition: max-height 0.35s ease;
+    }
+    .gc-text::after{
+        content: '';
+        position: absolute; left: 0; right: 0; bottom: 0;
+        height: 2.2em;
+        background: linear-gradient(to bottom, rgba(196,116,42,0), rgba(0,0,0,0.9));
+        pointer-events: none;
+        opacity: 1;
+        transition: opacity 0.25s ease;
+    }
+    .gc.expanded .gc-text{ max-height: 100vh; }
+    .gc.expanded .gc-text::after{ opacity: 0; }
+    .gc.feat .gc-text { font-size: 1.0rem; }
+    .gc-ft { display: flex; align-items: center; gap: 0.4rem; margin-top: 1.2rem; padding-top: 0.85rem; border-top: 1px solid rgba(196,116,42,0.1); }
+    .gc-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--terra); opacity: 0.4; flex-shrink: 0; }
+    .gc-lb  { font-family: var(--sans); font-size: 0.5rem; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(242,196,164,0.22); }
+
+    /* ─── FOOTER ─── */
+    #page-footer { padding: 100px 6vw 80px; text-align: center; position: relative; z-index: 1; border-top: 1px solid rgba(196,116,42,0.1); margin-top: 100px; }
+    #page-footer::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 700px; height: 500px; background: radial-gradient(ellipse, rgba(196,116,42,0.05) 0%, transparent 65%); pointer-events: none; }
+    .pf-eye   { font-family: var(--sans); font-size: 0.6rem; letter-spacing: 0.5em; text-transform: uppercase; color: var(--terra); margin-bottom: 1.5rem; }
+    .pf-title { font-size: clamp(2.8rem,5.5vw,5rem); font-weight: 900; text-transform: uppercase; line-height: 1.0; color: var(--salmon); margin-bottom: 3rem; }
+    .pf-btns  { display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+    .pf-bp    { display: inline-block; background: var(--terra); color: #000; font-family: var(--sans); font-size: 0.88rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 1rem 3.5rem; text-decoration: none; transition: background 0.3s, transform 0.2s; }
+    .pf-bp:hover { background: var(--salmon); transform: translateY(-2px); }
+    .pf-bs    { display: inline-block; border: 1px solid rgba(242,196,164,0.16); color: rgba(242,196,164,0.38); font-family: var(--sans); font-size: 0.78rem; letter-spacing: 0.2em; text-transform: uppercase; padding: 0.9rem 2.5rem; text-decoration: none; transition: border-color 0.3s, color 0.3s; }
+    .pf-bs:hover { border-color: var(--terra); color: var(--terra); }
+    .pf-copy { margin-top: 4rem; font-family: var(--sans); font-size: 0.55rem; letter-spacing: 0.22em; color: rgba(242,196,164,0.13); text-transform: uppercase; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 860px) {
+        #sticky-view { grid-template-columns: 1fr; }
+        #right-panel  { display: none; }
+        #left-panel   { padding: 120px 7vw 60px; align-items: flex-start; }
+        #left-panel::after { display: none; }
+        .beat { position: relative; width: 100%; }
+        .beat:not(.active) { display: none; }
+        .gg { grid-template-columns: 1fr; }
+        .gc.feat { grid-column: span 1; }
+    }
+
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: #000; }
+    ::-webkit-scrollbar-thumb { background: rgba(196,116,42,0.3); }
+    </style>
+</head>
+<body>
+
+<nav id="nav">
+    <a href="/" class="nav-logo">Orxateria Agustí · Des de 1979</a>
+    <div id="live-badge"><span class="ld"></span><span id="live-text">Carregant…</span></div>
+    <a href="/" class="nav-back">← Inici</a>
+</nav>
+
+<div id="orx-loading">
+    <span class="ld-logo">Orxateria Agustí</span>
+    <div class="ld-track"><div class="ld-bar" id="ld-bar"></div></div>
+    <span class="ld-pct" id="ld-pct">0%</span>
+</div>
+
+<div id="scroll-zone">
+    <div id="sticky-view">
+
+        <!-- ═══ LEFT PANEL ═══ -->
+        <div id="left-panel">
+
+            <!-- Beat A: Benvingut -->
+            <div class="beat" id="beat-a">
+                <p class="b-eye">Orxateria Agustí · Alfara del Patriarca</p>
+                <h1 class="b-hero">Horaris<br><em>clars</em><br>per venir.</h1>
+                <div class="b-rule"></div>
+                <p class="b-sub">Obrim cada dia perquè el bon sabor<br>no hauria de tenir límit horari · <span id="now-open-sub">—</span></p>
+            </div>
+
+            <!-- Beat B: Entre setmana -->
+            <div class="beat" id="beat-b">
+                <p class="b-lbl">Horari · Entre setmana</p>
+                <p class="b-days">Diumenge — Dijous</p>
+                <div id="b-status-b" class="b-status tancat">
+                    <span class="sd"></span><span id="b-status-b-txt">Comprova disponibilitat</span>
+                </div>
+                <div class="b-time-row" style="margin-bottom:1.2rem">
+                    <span class="b-time">11:00</span>
+                    <span class="b-time-sep">—</span>
+                    <span class="b-time">00:00</span>
+                </div>
+                <p class="b-note">Fins a la mitjanit cada nit</p>
+            </div>
+
+            <!-- Beat C: Cap de setmana -->
+            <div class="beat" id="beat-c">
+                <p class="b-lbl">Horari · Cap de setmana</p>
+                <p class="b-days">Divendres — Dissabte</p>
+                <div id="b-status-c" class="b-status tancat">
+                    <span class="sd"></span><span id="b-status-c-txt">Comprova disponibilitat</span>
+                </div>
+                <div class="b-time-row" style="margin-bottom:1.2rem">
+                    <span class="b-time">11:00</span>
+                    <span class="b-time-sep">—</span>
+                    <span class="b-time">01:30</span>
+                </div>
+                <p class="b-note">Fins a la matinada els caps de setmana</p>
+            </div>
+
+            <!-- Beat D: Adreça + planificador -->
+            <div class="beat" id="beat-d">
+                <h2 class="b-addr-title">T'esperem<br>a <em>Alfara.</em></h2>
+                <p class="b-street">C/ Sagunt, 50</p>
+                <p class="b-town">Alfara del Patriarca · 961 39 02 27</p>
+
+                <!-- Planificador interactiu -->
+                <div class="vt-wrap">
+                    <p class="vt-title">Planifica la teva visita — vindràs obert?</p>
+                    <div class="vt-days" id="vt-days">
+                        <button class="vd today" data-d="0">Dg</button>
+                        <button class="vd" data-d="1">Dl</button>
+                        <button class="vd" data-d="2">Dt</button>
+                        <button class="vd" data-d="3">Dc</button>
+                        <button class="vd" data-d="4">Dj</button>
+                        <button class="vd" data-d="5">Dv</button>
+                        <button class="vd" data-d="6">Ds</button>
+                    </div>
+                    <div class="vt-time-row">
+                        <span class="vt-time-lbl">Hora d'arribada</span>
+                        <input type="time" class="vt-input" id="vt-time" value="20:00">
+                    </div>
+                    <div class="vt-result" id="vt-result">— Selecciona un dia i hora</div>
+                </div>
+
+                <a href="https://maps.google.com/?q=C/+Sagunt+50+Alfara+del+Patriarca" target="_blank" class="b-cta">Com arribar-hi →</a>
+            </div>
+        </div>
+
+        <!-- ═══ RIGHT PANEL ═══ -->
+        <div id="right-panel">
+            <!-- Canvas ambient de fons -->
+            <canvas id="rp-ambient"></canvas>
+            <!-- Canvas de frames reals -->
+            <canvas id="orx-canvas" style="position:relative;z-index:2;"></canvas>
+
+            <!-- Dial principal (lectura instant) -->
+            <div id="clock-dial" class="closed" aria-hidden="true">
+                <div class="cd-box">
+                    <div class="cd-hand cd-hour" id="cd-hour"></div>
+                    <div class="cd-hand cd-minute" id="cd-minute"></div>
+                    <div class="cd-core"></div>
+                    <div id="clock-label">
+                        <div id="cd-label-status" class="cd-label-top">Tancat ara</div>
+                        <div id="cd-label-sub" class="cd-label-sub">Dom—Jue · 11:00 — 00:00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OVERLAY B: Entre setmana — apareix quan beat-b és actiu -->
+            <div class="rp-ov" id="ov-b">
+                <div class="ov-inner">
+                    <p class="ov-tag">Entre setmana · Dom — Jou</p>
+                    <p class="ov-time-big">11<span class="ov-sep">:</span>00 <span class="ov-sep">—</span> 00<span class="ov-sep">:</span>00</p>
+                </div>
+            </div>
+
+            <!-- OVERLAY C: Cap de setmana — apareix quan beat-c és actiu -->
+            <div class="rp-ov" id="ov-c">
+                <div class="ov-inner">
+                    <p class="ov-tag">Cap de setmana · Div — Dis</p>
+                    <p class="ov-time-big">11<span class="ov-sep">:</span>00 <span class="ov-sep">—</span> 01<span class="ov-sep">:</span>30</p>
+                </div>
+            </div>
+
+            <!-- STATUS overlay (top-right del vídeo) -->
+            <div id="ov-status">
+                <div class="ov-st-inner" id="ov-st-inner">
+                    <span class="ov-dot"></span>
+                    <span id="ov-st-txt">—</span>
+                </div>
+            </div>
+
+            <!-- Barra de progrés de scroll -->
+            <div id="scroll-prog">
+                <div id="scroll-prog-fill"></div>
+            </div>
+
+            <!-- Punts de capítol -->
+            <div id="chapter-dots">
+                <div class="cdot" data-ch="0"></div>
+                <div class="cdot" data-ch="1"></div>
+                <div class="cdot" data-ch="2"></div>
+                <div class="cdot" data-ch="3"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div id="scroll-divide"></div>
+<div id="scroll-hint">Scroll per descobrir ↓</div>
+
+<!-- ════════════════════════════════════
+     RESSENYES
+════════════════════════════════════ -->
+<section id="reviews">
+    <div class="rev-header">
+        <h2 class="rev-big-title">Veus<br><em>reals.</em></h2>
+        <div class="rev-score-blk">
+            <div class="rev-score">5.0</div>
+            <div class="rev-stars">★★★★★</div>
+            <div class="rev-count">10 ressenyes · Google</div>
+        </div>
+    </div>
+
+    <div class="gg" id="glass-grid">
+        <div class="gc feat">
+            <div class="gc-hd">
+                <div class="gc-av" style="background:#C4742A">R</div>
+                <div><div class="gc-nm">RBN Informàtica</div><div class="gc-meta"><span class="gc-st">★★★★★</span><span class="gc-wh">Fa 2 mesos</span></div></div>
+            </div>
+            <p class="gc-text">Possiblement de les millors horchates de València. Producte artesanal i de qualitat. Tenen una varietat enorme de gelats artesanals. Solc anar amb la meva dona i els meus fills a gaudir d'un gelat i/o horchata amb fartons a la terrassa. El tracte sempre és familiar i amb un somriure. Recomanable al 100%.</p>
+            <div class="gc-ft"><div class="gc-dot"></div><span class="gc-lb">Ressenyat a Google</span></div>
+        </div>
+        <div class="gc">
+            <div class="gc-hd">
+                <div class="gc-av" style="background:#8fa87a">A</div>
+                <div><div class="gc-nm">Ana Sánchez</div><div class="gc-meta"><span class="gc-st">★★★★★</span><span class="gc-wh">Fa 1 mes</span></div></div>
+            </div>
+            <p class="gc-text">L'orxateria de tota la vida, amb els seus productes típics i amb noves incorporacions a la carta. 100% recomanada.</p>
+            <div class="gc-ft"><div class="gc-dot"></div><span class="gc-lb">Ressenyat a Google</span></div>
+        </div>
+        <div class="gc">
+            <div class="gc-hd">
+                <div class="gc-av" style="background:#a47878">R</div>
+                <div><div class="gc-nm">Ramiro Hernandez</div><div class="gc-meta"><span class="gc-st">★★★★★</span><span class="gc-wh">Fa 2 mesos</span></div></div>
+            </div>
+            <p class="gc-text">El cambrer súper atent, proper, molt agradable. Els fartons casolans de 20 sobre 10. No et pots marxar sense provar-los. La horchata boníssima. Passem una bona estona. Tornarem segur.</p>
+            <div class="gc-ft"><div class="gc-dot"></div><span class="gc-lb">Ressenyat a Google</span></div>
+        </div>
+        <div class="gc">
+            <div class="gc-hd">
+                <div class="gc-av" style="background:#78899e">E</div>
+                <div><div class="gc-nm">Elena Pizarro</div><div class="gc-meta"><span class="gc-st">★★★★★</span><span class="gc-wh">Fa 2 mesos</span></div></div>
+            </div>
+            <p class="gc-text">Ahir a la tarda vam anar i tant el tracte com els gelats, llet merengada i llimona granissada que vam demanar, espectaculars. Gràcies. Tornarem sense dubte.</p>
+            <div class="gc-ft"><div class="gc-dot"></div><span class="gc-lb">Ressenyat a Google</span></div>
+        </div>
+        <div class="gc">
+            <div class="gc-hd">
+                <div class="gc-av" style="background:#7e78a4">M</div>
+                <div><div class="gc-nm">Mario Baquero Fombuena</div><div class="gc-meta"><span class="gc-st">★★★★★</span><span class="gc-wh">Fa 2 mesos</span></div></div>
+            </div>
+            <p class="gc-text">Vist i no vist. Tarrina mediana de mango, 3€. Espectacular.</p>
+            <div class="gc-ft"><div class="gc-dot"></div><span class="gc-lb">Ressenyat a Google</span></div>
+        </div>
+        <div class="gc">
+            <div class="gc-hd">
+                <div class="gc-av" style="background:#9e8c70">I</div>
+                <div><div class="gc-nm">Ignacio Peña</div><div class="gc-meta"><span class="gc-st">★★★★★</span><span class="gc-wh">Fa 3 mesos</span></div></div>
+            </div>
+            <p class="gc-text">De les millors geladeries/orxateries de tota València. Qualitat, rapidesa, i bon preu. Gofres, crêpes, gelats, horchates, granissats, i un servei immillorable. A 2 min del metro.</p>
+            <div class="gc-ft"><div class="gc-dot"></div><span class="gc-lb">Ressenyat a Google</span></div>
+        </div>
+        <div class="gc">
+            <div class="gc-hd">
+                <div class="gc-av" style="background:#7a9e8e">M</div>
+                <div><div class="gc-nm">Marta G.</div><div class="gc-meta"><span class="gc-st">★★★★★</span><span class="gc-wh">Fa 3 mesos</span></div></div>
+            </div>
+            <p class="gc-text">Una gran varietat de productes. Terrassa enorme. I per lo ple que estava ens van servir de seguida. El personal molt amable i simpàtic. Les copes de gelat i batuts estaven deliciosos!</p>
+            <div class="gc-ft"><div class="gc-dot"></div><span class="gc-lb">Ressenyat a Google</span></div>
+        </div>
+        <div class="gc">
+            <div class="gc-hd">
+                <div class="gc-av" style="background:#8e9e7a">J</div>
+                <div><div class="gc-nm">Javier</div><div class="gc-meta"><span class="gc-st">★★★★★</span><span class="gc-wh">Fa 3 mesos</span></div></div>
+            </div>
+            <p class="gc-text">Gelats de bona qualitat i amb gran varietat de sabors. Els cambrers són educats i molt propers.</p>
+            <div class="gc-ft"><div class="gc-dot"></div><span class="gc-lb">Ressenyat a Google</span></div>
+        </div>
+        <div class="gc feat">
+            <div class="gc-hd">
+                <div class="gc-av" style="background:#b87a4e">A</div>
+                <div><div class="gc-nm">Ainhoa Africa</div><div class="gc-meta"><span class="gc-st">★★★★★</span><span class="gc-wh">Fa 3 mesos</span></div></div>
+            </div>
+            <p class="gc-text">El tracte és ràpid, eficaç i el propietari és molt proper! Tots els productes són artesanals, de qualitat, i estan boníssims: ja sigui orxata amb fartons, llet merengada, gofres, o gelats de múltiples sabors!!! El preu de tots ells és molt assequible. Pots triar entre gaudir de la teva estada a l'interior o a l'extensa terrassa.</p>
+            <div class="gc-ft"><div class="gc-dot"></div><span class="gc-lb">Ressenyat a Google</span></div>
+        </div>
+        <div class="gc">
+            <div class="gc-hd">
+                <div class="gc-av" style="background:#8a8a9e">I</div>
+                <div><div class="gc-nm">Isabel Tortosa Oteros</div><div class="gc-meta"><span class="gc-st">★★★★★</span><span class="gc-wh">Fa 4 mesos</span></div></div>
+            </div>
+            <p class="gc-text">Lloc tranquil per a prendre una bona horchata, molt recomanable.</p>
+            <div class="gc-ft"><div class="gc-dot"></div><span class="gc-lb">Ressenyat a Google</span></div>
+        </div>
+    </div>
+</section>
+
+<footer id="page-footer">
+    <p class="pf-eye">Orxateria Agustí · Des de 1979</p>
+    <h2 class="pf-title">T'esperem<br>cada dia.</h2>
+    <div class="pf-btns">
+        <a href="/carta" class="pf-bp">Veure la carta completa</a>
+        <a href="https://maps.google.com/?q=C/+Sagunt+50+Alfara+del+Patriarca" target="_blank" class="pf-bs">Com arribar-hi →</a>
+    </div>
+    <p class="pf-copy">© 2026 Orxateria Agustí · Tots els drets reservats · 961 39 02 27</p>
+</footer>
+
+<script>
+(() => {
+
+/* ══════════════════════════════════════
+   HELPERS: horari
+══════════════════════════════════════ */
+function isOpenAt(dayOfWeek, totalMinutes) {
+    // dayOfWeek: 0=Diumenge, 1=Dilluns...6=Dissabte
+    // totalMinutes: hores*60+minuts (0..1439)
+    // Horari:
+    // - Dom—Jue: 11:00 → 00:00
+    // - Vie—Sáb: 11:00 → 01:30 (creua mitjanit)
+    // Per la matinada (00:00–01:30) només és obert el dissabte (dia 6).
+    if (totalMinutes < 660) {
+        return dayOfWeek === 6 && totalMinutes < 90;
+    }
+    if (dayOfWeek === 5) return true; // divendres: 11:00→23:59
+    if (dayOfWeek === 6) return true; // dissabte: 11:00→23:59 i 00:00→01:30
+    return totalMinutes < 1440; // Dom—Jue: 11:00→23:59
+}
+
+const now = new Date();
+const todayDay = now.getDay();
+const nowMins = now.getHours() * 60 + now.getMinutes();
+const isOpenNow = isOpenAt(todayDay, nowMins);
+
+/* ── Live badge (nav) ── */
+const liveBadge = document.getElementById('live-badge');
+const liveText  = document.getElementById('live-text');
+if (isOpenNow) {
+    liveBadge.classList.add('open');
+    liveText.textContent = 'Obert ara';
+} else {
+    liveText.textContent = 'Tancat ara';
+}
+
+/* ── Status overlay (vídeo) ── */
+const nowOpenSub = document.getElementById('now-open-sub');
+if (nowOpenSub) nowOpenSub.textContent = isOpenNow ? 'Obert ara' : 'Tancat ara';
+
+/* ── Clock dial ── */
+const clockDial = document.getElementById('clock-dial');
+const hourHand = document.getElementById('cd-hour');
+const minuteHand = document.getElementById('cd-minute');
+const labelStatus = document.getElementById('cd-label-status');
+const labelSub = document.getElementById('cd-label-sub');
+if (clockDial && hourHand && minuteHand) {
+    const isWkndToday = todayDay === 5 || todayDay === 6;
+    clockDial.classList.toggle('open', isOpenNow);
+    clockDial.classList.toggle('closed', !isOpenNow);
+    if (labelStatus) labelStatus.textContent = isOpenNow ? 'Obert ara' : 'Tancat ara';
+    if (labelSub) labelSub.textContent = isWkndToday ? 'Vie—Sáb · 11:00 — 01:30' : 'Dom—Jue · 11:00 — 00:00';
+
+    const setAngles = () => {
+        const d = new Date();
+        const h = d.getHours() % 12;
+        const m = d.getMinutes();
+        const s = d.getSeconds();
+        const hourAngle = (h + m / 60) * 30;
+        const minuteAngle = (m + s / 60) * 6;
+        hourHand.style.setProperty('--angle', hourAngle + 'deg');
+        minuteHand.style.setProperty('--angle', minuteAngle + 'deg');
+    };
+    setAngles();
+    setInterval(setAngles, 1000);
+}
+
+const ovStEl  = document.getElementById('ov-st-inner');
+const ovStTxt = document.getElementById('ov-st-txt');
+if (isOpenNow) {
+    ovStEl.classList.add('ok');
+    ovStTxt.textContent = 'Obert ara';
+} else {
+    ovStTxt.textContent = 'Tancat ara';
+}
+
+/* ── Status beats B / C ── */
+function updateBeatStatus(elId, txtId, dayMin, dayMax) {
+    const el  = document.getElementById(elId);
+    const txt = document.getElementById(txtId);
+    // si avui és en el rang de dies d'aquest beat
+    const inRange = todayDay >= dayMin && todayDay <= dayMax;
+    if (!inRange) { el.classList.add('tancat'); txt.textContent = 'Avui no és el teu horari'; return; }
+    if (isOpenNow) { el.classList.remove('tancat'); el.classList.add('obert'); txt.textContent = 'Estem oberts ara'; }
+    else { el.classList.add('tancat'); txt.textContent = 'Ara estem tancats'; }
+}
+// Beat B: Dom(0) — Dijous(4)
+if (todayDay === 0 || (todayDay >= 1 && todayDay <= 4)) updateBeatStatus('b-status-b', 'b-status-b-txt', 0, 4);
+// Beat C: Div(5) — Dis(6)
+if (todayDay === 5 || todayDay === 6) updateBeatStatus('b-status-c', 'b-status-c-txt', 5, 6);
+
+/* ══════════════════════════════════════
+   PLANIFICADOR DE VISITA
+══════════════════════════════════════ */
+const DAY_NAMES = ['Diumenge','Dilluns','Dimarts','Dimecres','Dijous','Divendres','Dissabte'];
+let selDay = todayDay;
+
+const vtDaysEl = document.getElementById('vt-days');
+const vtTime   = document.getElementById('vt-time');
+const vtResult = document.getElementById('vt-result');
+
+// Marca avui
+vtDaysEl.querySelectorAll('.vd').forEach(btn => {
+    const d = +btn.dataset.d;
+    if (d === todayDay) btn.classList.add('today');
+    btn.addEventListener('click', () => {
+        vtDaysEl.querySelectorAll('.vd').forEach(b => b.classList.remove('sel'));
+        btn.classList.add('sel');
+        selDay = d;
+        checkVisit();
+    });
+});
+
+// Selecciona avui per defecte
+vtDaysEl.querySelector(`[data-d="${todayDay}"]`).classList.add('sel');
+
+vtTime.addEventListener('change', checkVisit);
+
+function checkVisit() {
+    const [h, m] = vtTime.value.split(':').map(Number);
+    const mins = h * 60 + m;
+    const open = isOpenAt(selDay, mins);
+    const isWknd = selDay === 5 || selDay === 6;
+    const closeStr = isWknd ? '01:30' : '00:00';
+    const dayName = DAY_NAMES[selDay];
+    if (open) {
+        vtResult.className = 'vt-result ok';
+        vtResult.textContent = `✓ Sí! El ${dayName} a les ${vtTime.value} estem oberts (fins a les ${closeStr})`;
+    } else {
+        vtResult.className = 'vt-result nok';
+        if (mins < 660) {
+            vtResult.textContent = `El ${dayName} obrim a les 11:00 h`;
+        } else {
+            vtResult.textContent = `El ${dayName} tanquem a les ${closeStr} — vine una mica abans!`;
+        }
+    }
+}
+checkVisit();
+
+/* ══════════════════════════════════════
+   AMBIENT CANVAS
+══════════════════════════════════════ */
+(() => {
+    const ac = document.getElementById('rp-ambient');
+    const panel = document.getElementById('right-panel');
+    const resize = () => { ac.width = panel.offsetWidth; ac.height = panel.offsetHeight; };
+    resize();
+    window.addEventListener('resize', resize, { passive: true });
+    const ctx = ac.getContext('2d');
+    const TERRA  = [196, 116, 42];
+    const SALMON = [242, 196, 164];
+    const N = 50;
+    const particles = Array.from({ length: N }, () => ({
+        x: Math.random(), y: Math.random(),
+        r: 2 + Math.random() * 4.5,
+        life: Math.random(), speed: 0.0002 + Math.random() * 0.0004,
+        col: Math.random() > 0.5 ? TERRA : SALMON,
+        alpha: 0.07 + Math.random() * 0.16,
+    }));
+    const blobs = Array.from({ length: 4 }, () => ({
+        x: Math.random(), y: Math.random(),
+        r: 0.14 + Math.random() * 0.2,
+        col: Math.random() > 0.5 ? TERRA : SALMON,
+        t: Math.random() * Math.PI * 2,
+        st: 0.0003 + Math.random() * 0.0004,
+    }));
+    let frame = 0;
+    const tick = () => {
+        requestAnimationFrame(tick);
+        const W = ac.width, H = ac.height;
+        if (!W || !H) return;
+        ctx.clearRect(0, 0, W, H);
+        const bg = ctx.createRadialGradient(W*.5, H*.6, 0, W*.5, H*.4, Math.max(W,H)*.75);
+        bg.addColorStop(0, 'rgba(28,12,4,1)'); bg.addColorStop(1, 'rgba(0,0,0,1)');
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+        blobs.forEach(b => {
+            b.t += b.st;
+            const bx = (b.x + Math.sin(b.t) * 0.06) * W;
+            const by = (b.y + Math.cos(b.t * 0.7) * 0.05) * H;
+            const gr = ctx.createRadialGradient(bx, by, 0, bx, by, b.r * Math.min(W,H));
+            gr.addColorStop(0, `rgba(${b.col.join(',')},0.10)`);
+            gr.addColorStop(1, `rgba(${b.col.join(',')},0)`);
+            ctx.fillStyle = gr; ctx.beginPath();
+            ctx.arc(bx, by, b.r * Math.min(W,H), 0, Math.PI*2); ctx.fill();
+        });
+        particles.forEach(p => {
+            p.life += p.speed;
+            if (p.life > 1) { p.life = 0; p.x = Math.random(); }
+            const px = p.x * W, py = (1 - p.life) * H * 1.1;
+            const alpha = p.life < 0.15 ? p.alpha*(p.life/0.15) : p.life > 0.82 ? p.alpha*((1-p.life)/0.18) : p.alpha;
+            ctx.save(); ctx.globalAlpha = alpha;
+            ctx.shadowColor = `rgb(${p.col.join(',')})`; ctx.shadowBlur = 8;
+            ctx.fillStyle = `rgb(${p.col.join(',')})`; ctx.beginPath();
+            ctx.arc(px, py, p.r, 0, Math.PI*2); ctx.fill(); ctx.restore();
+        });
+        const scanY = ((frame * 0.28) % H);
+        const sg = ctx.createLinearGradient(0, scanY-55, 0, scanY+55);
+        sg.addColorStop(0,'rgba(196,116,42,0)'); sg.addColorStop(.5,'rgba(196,116,42,0.035)'); sg.addColorStop(1,'rgba(196,116,42,0)');
+        ctx.fillStyle = sg; ctx.fillRect(0, scanY-55, W, 110);
+        frame++;
+    };
+    tick();
+})();
+
+/* ══════════════════════════════════════
+   FRAME ANIMATION + SCROLL
+══════════════════════════════════════ */
+const FRAME_COUNT = 159;
+const PATH = '/wp-content/uploads/orxateria-frames-horarios/';
+
+const loadingEl  = document.getElementById('orx-loading');
+const ldBar      = document.getElementById('ld-bar');
+const ldPct      = document.getElementById('ld-pct');
+const zone       = document.getElementById('scroll-zone');
+const canvas     = document.getElementById('orx-canvas');
+const ctx        = canvas.getContext('2d');
+const hint       = document.getElementById('scroll-hint');
+const ambient    = document.getElementById('rp-ambient');
+const ovStatus   = document.getElementById('ov-status');
+const ovB        = document.getElementById('ov-b');
+const ovC        = document.getElementById('ov-c');
+const progFill   = document.getElementById('scroll-prog-fill');
+const chDots     = document.querySelectorAll('.cdot');
+const clockDialEl = document.getElementById('clock-dial');
+
+const BEATS = [
+    { el: document.getElementById('beat-a'), s: 0.00, e: 0.22 },
+    { el: document.getElementById('beat-b'), s: 0.25, e: 0.47 },
+    { el: document.getElementById('beat-c'), s: 0.50, e: 0.72 },
+    { el: document.getElementById('beat-d'), s: 0.75, e: 0.97 },
+];
+
+const imgs = new Array(FRAME_COUNT);
+let loaded = 0, ready = false, firstDone = false, lastIdx = -1, framesWorking = false;
+const base = window.location.protocol === 'file:' ? './' : PATH;
+
+const sizeCanvas = (img) => {
+    const panel = document.getElementById('right-panel');
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const pw = panel.offsetWidth * dpr, ph = panel.offsetHeight * dpr;
+    const s = Math.min(pw / img.naturalWidth, ph / img.naturalHeight);
+    canvas.width  = img.naturalWidth  * s;
+    canvas.height = img.naturalHeight * s;
+    canvas.style.width  = (canvas.width  / dpr) + 'px';
+    canvas.style.height = (canvas.height / dpr) + 'px';
+};
+
+const drawFrame = (idx) => {
+    const img = imgs[idx];
+    if (!img?.complete || !img.naturalWidth) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    lastIdx = idx;
+};
+
+for (let i = 0; i < FRAME_COUNT; i++) {
+    const img = new Image();
+    img.src = `${base}frame_${String(i+1).padStart(4,'0')}.webp`;
+    img.onload = () => {
+        loaded++;
+        const pct = Math.round(loaded / FRAME_COUNT * 100);
+        ldBar.style.width = pct + '%';
+        ldPct.textContent = pct + '%';
+        if (!firstDone && imgs[0]?.complete && imgs[0].naturalWidth) {
+            firstDone = true; framesWorking = true;
+            sizeCanvas(imgs[0]); drawFrame(0);
+            ambient.classList.add('hidden');
+        }
+        if (loaded === FRAME_COUNT) { ready = true; loadingEl.classList.add('done'); }
+    };
+    img.onerror = () => {
+        loaded++;
+        const pct = Math.round(loaded / FRAME_COUNT * 100);
+        ldBar.style.width = pct + '%'; ldPct.textContent = pct + '%';
+        if (loaded === FRAME_COUNT) loadingEl.classList.add('done');
+    };
+    imgs[i] = img;
+}
+
+let scrollProg = 0, smooth = 0;
+const onScroll = () => {
+    const r = zone.getBoundingClientRect();
+    scrollProg = Math.max(0, Math.min(1, -r.top / (r.height - window.innerHeight)));
+};
+window.addEventListener('scroll', onScroll, { passive: true });
+window.addEventListener('resize', () => {
+    if (framesWorking && imgs[0]?.complete) sizeCanvas(imgs[0]);
+    onScroll();
+}, { passive: true });
+onScroll();
+
+const loop = () => {
+    requestAnimationFrame(loop);
+    smooth += (scrollProg - smooth) * 0.09;
+
+    /* Frame animation */
+    if (ready && framesWorking) {
+        const idx = Math.min(FRAME_COUNT-1, Math.floor(scrollProg * FRAME_COUNT));
+        if (idx !== lastIdx) drawFrame(idx);
+    }
+
+    /* Beats left panel */
+    let activeChapter = -1;
+    BEATS.forEach(({ el, s, e }, i) => {
+        if (!el) return;
+        const on = smooth >= s && smooth <= e;
+        el.classList.toggle('active', on);
+        if (on) activeChapter = i;
+    });
+
+    /* Overlays sobre el vídeo */
+    const bOn = smooth >= 0.25 && smooth <= 0.47;
+    const cOn = smooth >= 0.50 && smooth <= 0.72;
+    ovB.classList.toggle('vis', bOn);
+    ovC.classList.toggle('vis', cOn);
+
+    /* Dial (reloj) no tapa el overlay grande */
+    if (clockDialEl) clockDialEl.classList.toggle('hide', bOn || cOn);
+
+    /* Status overlay: visible des del 2n beat en endavant */
+    ovStatus.classList.toggle('vis', smooth >= 0.22);
+
+    /* Progress bar */
+    progFill.style.height = (scrollProg * 100) + '%';
+
+    /* Chapter dots */
+    chDots.forEach((d, i) => d.classList.toggle('on', i === activeChapter));
+
+    /* Scroll hint */
+    hint.style.opacity = Math.max(0, 1 - scrollProg / 0.04);
+};
+requestAnimationFrame(loop);
+
+/* Intersection review cards */
+const cards = document.querySelectorAll('.gc');
+const obs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const i = Array.from(cards).indexOf(entry.target);
+            setTimeout(() => entry.target.classList.add('vis'), (i % 3) * 80);
+            obs.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.06, rootMargin: '0px 0px -40px 0px' });
+cards.forEach(c => obs.observe(c));
+
+/* ── Review expand (reads better) ── */
+cards.forEach(c => {
+    c.addEventListener('click', () => c.classList.toggle('expanded'));
+});
+
+})();
+</script>
+</body>
+</html>
